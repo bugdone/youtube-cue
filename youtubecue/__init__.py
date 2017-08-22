@@ -1,9 +1,9 @@
-import sys
 import json
 import subprocess
 import re
 
 import musicbrainz
+import youtube
 
 
 def get_offset(hours, minutes, seconds):
@@ -53,6 +53,11 @@ def get_cue(url):
              duration=o['duration'],
              title=title,
              tracks=parse_description(o['description'], o['duration']))
+    if not d['tracks']:
+        for comment in youtube.get_comments(d['url']):
+            d['tracks'] = parse_description(comment, d['duration'])
+            if d['tracks']:
+                break
     if d['tracks']:
         guess_artist_album(d)
         if d.get('artist'):
