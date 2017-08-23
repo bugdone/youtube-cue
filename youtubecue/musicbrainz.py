@@ -3,7 +3,8 @@ import difflib
 import musicbrainzngs
 
 
-musicbrainzngs.set_useragent('youtube-cue', '0.1')
+def init_musicbrainz(*args, **kwargs):
+    musicbrainzngs.set_useragent(*args, **kwargs)
 
 
 def get_tracks(artist, album):

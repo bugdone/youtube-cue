@@ -3,6 +3,7 @@ import subprocess
 import re
 
 import musicbrainz
+from musicbrainz import init_musicbrainz
 import youtube
 
 
