@@ -1,10 +1,30 @@
 import json
+import os.path
 import subprocess
 import re
 
 import musicbrainz
 from musicbrainz import init_musicbrainz
 import youtube
+
+log_path = None
+log_data = {}
+
+
+def set_log_path(path):
+    global log_path
+    log_path = path
+
+
+def log(key, value):
+    if log_path:
+        global log_data
+        log_data[key] = value
+
+
+def write_log():
+    with open(os.path.join(log_path, log_data['id']), 'w') as f:
+        json.dump(log_data, f, indent=4)
 
 
 def get_offset(hours, minutes, seconds):
@@ -47,17 +67,22 @@ def guess_artist_album(d):
 
 
 def get_cue(url):
+    log('id', youtube.get_youtube_id(url))
     o = subprocess.check_output(('youtube-dl -j ' + url).split())
     o = json.loads(o)
     title = o['fulltitle']
+    log('youtubedl', {k: v for (k, v) in o.iteritems() if k in ('fulltitle', 'duration', 'webpage_url', 'description')})
     d = dict(url=o['webpage_url'],
              duration=o['duration'],
              title=title,
              tracks=parse_description(o['description'], o['duration']))
     if not d['tracks']:
-        for comment in youtube.get_comments(d['url']):
+        comments = list(youtube.get_comments(d['url']))
+        log('comments', comments)
+        for comment in comments:
             d['tracks'] = parse_description(comment, d['duration'])
             if d['tracks']:
+                log('comment', comment)
                 break
     if len(d['tracks']) < 2:
         # Not much of a cue with just 1 track, eh?
@@ -66,4 +91,7 @@ def get_cue(url):
         guess_artist_album(d)
         if d.get('artist'):
             musicbrainz.guess_tracks(d)
+    if log_path:
+        log('output', d)
+        write_log()
     return d

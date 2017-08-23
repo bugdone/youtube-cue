@@ -1,10 +1,9 @@
 import json
-import lxml.html
 import re
+import lxml.html
 import requests
 import time
 from lxml.cssselect import CSSSelector
-
 
 YOUTUBE_COMMENTS_URL = 'https://www.youtube.com/all_comments?v={youtube_id}'
 YOUTUBE_COMMENTS_AJAX_URL = 'https://www.youtube.com/comment_ajax'
@@ -36,11 +35,15 @@ def ajax_request(session, url, params, data, retries=10, sleep=20):
             time.sleep(sleep)
 
 
-def get_comments(url):
+def get_youtube_id(url):
     m = re.search('.*v=(.{11}).*', url)
     if m is None:
         return
-    youtube_id = m.group(1)
+    return m.group(1)
+
+
+def get_comments(url):
+    youtube_id = get_youtube_id(url)
 
     session = requests.Session()
     session.headers['User-Agent'] = USER_AGENT
