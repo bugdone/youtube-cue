@@ -58,6 +58,9 @@ def get_cue(url):
             d['tracks'] = parse_description(comment, d['duration'])
             if d['tracks']:
                 break
+    if len(d['tracks']) < 2:
+        # Not much of a cue with just 1 track, eh?
+        d['tracks'] = []
     if d['tracks']:
         guess_artist_album(d)
         if d.get('artist'):
