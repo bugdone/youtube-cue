@@ -55,10 +55,10 @@ def parse_description(description, duration):
 
 
 def guess_artist_album(d):
+    ignore = ['\(.*\)', '\[.*\]', '\{.*\}', 'full album.*']
     t = d['title']
-    t = re.sub('\(.*\)', '', t)
-    t = re.sub('\[.*\]', '', t)
-    t = re.sub('\{.*\}', '', t)
+    for regexp in ignore:
+        t = re.sub(regexp, '', t, flags=re.IGNORECASE)
     t = t.strip()
     m = re.match('(.*)\s* -\s* (.*)', t)
     if m:
