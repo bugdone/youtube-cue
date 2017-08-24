@@ -47,7 +47,7 @@ def parse_description(description, duration):
             tracks[-2]['duration'] = tracks[-1]['offset'] - tracks[-2]['offset']
     if tracks:
         tracks[-1]['duration'] = duration - tracks[-1]['offset']
-    matches = [(t, re.match('0?%d+[ \./"-]* ?(.*)' % i, t['title'])) for (i, t) in enumerate(tracks, 1)]
+    matches = [(t, re.match('\s*0?%d+[ \./"-]* ?(.*)' % i, t['title'])) for (i, t) in enumerate(tracks, 1)]
     if all([m[1] for m in matches]):
         for (track, match) in matches:
             track['title'] = match.group(1).strip('"/-')
