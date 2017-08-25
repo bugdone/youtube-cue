@@ -1,6 +1,7 @@
 import difflib
 
 import musicbrainzngs
+import youtubecue
 
 
 def init_musicbrainz(*args, **kwargs):
@@ -9,6 +10,7 @@ def init_musicbrainz(*args, **kwargs):
 
 def get_tracks(artist, album):
     recordings = musicbrainzngs.search_recordings(artist=artist, release=album)['recording-list']
+    youtubecue.log('musicbrainz', recordings)
     return [r['title'] for r in recordings]
 
 
