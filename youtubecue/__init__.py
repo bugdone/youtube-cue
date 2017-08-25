@@ -55,7 +55,7 @@ def parse_description(description, duration):
 
 
 def guess_artist_album(d):
-    ignore = ['\(.*\)', '\[.*\]', '\{.*\}', 'full album.*']
+    ignore = ['\(.*\)', '\[.*\]', '\{.*\}', 'full album.*', '(?<!\w)hd(?!\w)', '(?<!\w)hq(?!\w)']
     t = d['title']
     for regexp in ignore:
         t = re.sub(regexp, '', t, flags=re.IGNORECASE)
@@ -64,6 +64,8 @@ def guess_artist_album(d):
     if m:
         d['artist'] = m.group(1)
         d['album'] = m.group(2)
+        if len(d['album']) > 2 and d['album'].startswith('"') and d['album'].startswith('"'):
+            d['album'] = d['album'].strip('"')
 
 
 def get_cue(url):
