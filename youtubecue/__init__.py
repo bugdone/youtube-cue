@@ -31,7 +31,7 @@ def get_offset(hours, minutes, seconds):
     return (int(hours) * 3600 if hours else 0) + int(minutes) * 60 + int(seconds)
 
 
-def parse_description(description, duration):
+def parse_description(description):
     tracks = []
     for line in description.splitlines():
         m = re.search('(\(?\[?(?:(\d+):)?(\d+):(\d+))(?:.*)(?:(?:\d+:)?\d+:\d+)?', line)
@@ -43,14 +43,15 @@ def parse_description(description, duration):
             title = line[m.end(1):]
         title = title.strip()
         tracks.append(dict(title=title, offset=get_offset(m.group(2), m.group(3), m.group(4))))
-        if len(tracks) > 1:
-            tracks[-2]['duration'] = tracks[-1]['offset'] - tracks[-2]['offset']
-    if tracks:
-        tracks[-1]['duration'] = duration - tracks[-1]['offset']
     matches = [(t, re.match('\s*0?%d+[ \./"-]* ?(.*)' % i, t['title'])) for (i, t) in enumerate(tracks, 1)]
-    if all([m[1] for m in matches]):
+    if len([1 for m in matches if m[1]]) >= len(tracks) / 2:
+        tracks = []
         for (track, match) in matches:
-            track['title'] = match.group(1).strip('"/-')
+            if match:
+                tracks.append(track)
+                tracks[-1]['title'] = match.group(1)
+    for track in tracks:
+        track['title'] = track['title'].strip('"/- \t')
     return tracks
 
 
@@ -68,6 +69,12 @@ def guess_artist_album(d):
             d['album'] = d['album'].strip('"')
 
 
+def add_duration(tracks, duration):
+    for i in range(len(tracks) - 1):
+        tracks[i]['duration'] = tracks[i + 1]['offset'] - tracks[i]['offset']
+    tracks[-1]['duration'] = duration - tracks[-1]['offset']
+
+
 def get_cue(url):
     log('id', youtube.get_youtube_id(url))
     o = subprocess.check_output(('youtube-dl -j ' + url).split())
@@ -77,12 +84,13 @@ def get_cue(url):
     d = dict(url=o['webpage_url'],
              duration=o['duration'],
              title=title,
-             tracks=parse_description(o['description'], o['duration']))
+             tracks=parse_description(o['description']))
+    log('parsed_description', d['tracks'])
     if not d['tracks']:
         comments = list(youtube.get_comments(d['url']))
         log('comments', comments)
         for comment in comments:
-            d['tracks'] = parse_description(comment, d['duration'])
+            d['tracks'] = parse_description(comment)
             if d['tracks']:
                 log('comment', comment)
                 break
@@ -93,6 +101,7 @@ def get_cue(url):
         guess_artist_album(d)
         if d.get('artist'):
             musicbrainz.guess_tracks(d)
+        add_duration(d['tracks'], d['duration'])
     if log_path:
         log('output', d)
         write_log()
