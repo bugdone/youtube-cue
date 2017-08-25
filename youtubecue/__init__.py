@@ -44,7 +44,7 @@ def parse_description(description):
         title = title.strip()
         tracks.append(dict(title=title, offset=get_offset(m.group(2), m.group(3), m.group(4))))
     # If track no is present, remove lines without it
-    matches = [(t, re.match('\s*0?%d+[ ./"-]* ?(.*)' % i, t['title'])) for (i, t) in enumerate(tracks, 1)]
+    matches = [(t, re.match('\s*0?%d+[ ./":-]* ?(.*)' % i, t['title'])) for (i, t) in enumerate(tracks, 1)]
     if len([1 for m in matches if m[1]]) >= len(tracks) / 2:
         tracks = []
         for (track, match) in matches:
