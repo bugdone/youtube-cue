@@ -81,10 +81,20 @@ def add_duration(tracks, duration):
     tracks[-1]['duration'] = duration - tracks[-1]['offset']
 
 
+def youtubedl(url):
+    """Retry youtube-dl -j until it returns the description"""
+    for _ in range(3):
+        o = subprocess.check_output(('youtube-dl -j ' + url).split())
+        o = json.loads(o)
+        if not o.get('description'):
+            time.sleep(3)
+            continue
+        return o
+
+
 def get_cue(url):
     log('id', youtube.get_youtube_id(url))
-    o = subprocess.check_output(('youtube-dl -j ' + url).split())
-    o = json.loads(o)
+    o = youtubedl(url)
     title = o['fulltitle']
     log('youtubedl', {k: v for (k, v) in o.iteritems() if k in ('fulltitle', 'duration', 'webpage_url', 'description')})
     d = dict(url=o['webpage_url'],
