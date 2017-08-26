@@ -1,30 +1,36 @@
 import json
+import logging
 import os.path
-import subprocess
+import pprint
 import re
+import subprocess
+import time
 
 import musicbrainz
-from musicbrainz import init_musicbrainz
 import youtube
+from musicbrainz import init_musicbrainz
 
-log_path = None
-log_data = {}
-
-
-def set_log_path(path):
-    global log_path
-    log_path = path
+log_directory = None
+logged_data = {}
+logged_messages = []
 
 
-def log(key, value):
-    if log_path:
-        global log_data
-        log_data[key] = value
+def set_log_directory(path):
+    global log_directory
+    log_directory = path
+
+
+def log_data(key, value):
+    if log_directory:
+        global logged_data
+        logged_data[key] = value
 
 
 def write_log():
-    with open(os.path.join(log_path, log_data['id']), 'w') as f:
-        json.dump(log_data, f, indent=4)
+    if log_directory is None:
+        return
+    with open(os.path.join(log_directory, logged_data['id']), 'w') as f:
+        json.dump(logged_data, f, indent=4)
 
 
 def get_offset(hours, minutes, seconds):
@@ -46,12 +52,14 @@ def parse_description(description):
     # If track no is present, remove lines without it
     matches = [(t, re.match('\s*0?%d+[ ./":-]* ?(.*)' % i, t['title'])) for (i, t) in enumerate(tracks, 1)]
     if len([1 for m in matches if m[1]]) >= len(tracks) / 2:
+        logging.info('Detected track numbers')
         tracks = []
         for (track, match) in matches:
             if match:
                 tracks.append(track)
                 tracks[-1]['title'] = match.group(1)
     if tracks != sorted(tracks, key=lambda x: x['offset']):
+        logging.info('Got track lengths, not offsets')
         # Got track lengths, not offsets
         lengths = [0] + [t['offset'] for t in tracks]
         for i in range(len(tracks)):
@@ -64,15 +72,20 @@ def parse_description(description):
 def guess_artist_album(d):
     ignore = ['\(.*\)', '\[.*\]', '\{.*\}', 'full album.*', '(?<!\w)hd(?!\w)', '(?<!\w)hq(?!\w)']
     t = d['title']
+    logging.info('Title: %s', d['title'])
     for regexp in ignore:
         t = re.sub(regexp, '', t, flags=re.IGNORECASE)
     t = t.strip()
     m = re.match('(.*)\s* -\s* (.*)', t)
+    logging.info('Title after junk removal: %s', t)
     if m:
         d['artist'] = m.group(1)
         d['album'] = m.group(2)
         if len(d['album']) > 2 and d['album'].startswith('"') and d['album'].startswith('"'):
             d['album'] = d['album'].strip('"')
+        logging.info('Guessing artist/album\n   Artist: %s\n   Album: %s\n', d['artist'], d['album'])
+    else:
+        logging.info('Cannot guess artist/album')
 
 
 def add_duration(tracks, duration):
@@ -87,28 +100,32 @@ def youtubedl(url):
         o = subprocess.check_output(('youtube-dl -j ' + url).split())
         o = json.loads(o)
         if not o.get('description'):
+            logging.warn('youtube-dl returned empty description')
             time.sleep(3)
             continue
         return o
 
 
-def get_cue(url):
-    log('id', youtube.get_youtube_id(url))
+def _get_cue(url):
     o = youtubedl(url)
     title = o['fulltitle']
-    log('youtubedl', {k: v for (k, v) in o.iteritems() if k in ('fulltitle', 'duration', 'webpage_url', 'description')})
+    log_data('youtubedl', o)
+    logging.info('Got description\n%s\n', o['description'])
     d = dict(url=o['webpage_url'],
              duration=o['duration'],
              title=title,
              tracks=parse_description(o['description']))
-    log('parsed_description', d['tracks'])
+    logging.info('Parsed description\n%s\n', pprint.pformat(d['tracks']))
     if not d['tracks']:
+        logging.info('Could not parse tracks from description, trying comments')
         comments = list(youtube.get_comments(d['url']))
-        log('comments', comments)
+        log_data('comments', comments)
         for comment in comments:
             d['tracks'] = parse_description(comment)
             if d['tracks']:
-                log('comment', comment)
+                log_data('comment', comment)
+                logging.info('Parsed comment:\n%s\n', comment)
+                logging.info('Parsed tracks from comment:\n%s\n', pprint.pformat(d['tracks']))
                 break
     if len(d['tracks']) < 2:
         # Not much of a cue with just 1 track, eh?
@@ -116,9 +133,26 @@ def get_cue(url):
     if d['tracks']:
         guess_artist_album(d)
         if d.get('artist'):
+            logging.info('Have artist, using musicbrainz to guess track titles')
             musicbrainz.guess_tracks(d)
         add_duration(d['tracks'], d['duration'])
-    if log_path:
-        log('output', d)
-        write_log()
+    log_data('output', d)
     return d
+
+
+def get_cue(url):
+    if log_directory:
+        youtubeid = youtube.get_youtube_id(url)
+        log_data('id', youtubeid)
+
+        fh = logging.FileHandler(os.path.join(log_directory, '%s.log' % youtubeid), mode='w')
+        fh.setLevel(logging.DEBUG)
+        fh.setFormatter(logging.Formatter('%(levelname)s - %(message)s'))
+
+        logging.getLogger().setLevel(logging.DEBUG)
+        logging.getLogger().addHandler(fh)
+    try:
+        _get_cue(url)
+    except:
+        logging.exception('get_cue() failed')
+    write_log()

@@ -1,6 +1,7 @@
 import json
-import re
+import logging
 import lxml.html
+import re
 import requests
 import time
 from lxml.cssselect import CSSSelector
@@ -32,6 +33,7 @@ def ajax_request(session, url, params, data, retries=10, sleep=20):
             response_dict = json.loads(response.text)
             return response_dict.get('page_token', None), response_dict['html_content']
         else:
+            logging.error('Ajax get comments response: %s %s', response.status_code, response.text)
             time.sleep(sleep)
 
 
