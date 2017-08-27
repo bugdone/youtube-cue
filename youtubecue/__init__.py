@@ -70,14 +70,15 @@ def parse_description(description):
 
 
 def guess_artist_album(d):
-    ignore = ['\(.*\)', '\[.*\]', '\{.*\}', 'full album.*', '(?<!\w)hd(?!\w)', '(?<!\w)hq(?!\w)']
+    ignore = ['\([^)]*\)', '\[[^]]*\]', '\{[^}]*\}', 'full album.*', '(?<!\w)hd(?!\w)', '(?<!\w)hq(?!\w)']
     t = d['title']
     logging.info('Title: %s', d['title'])
     for regexp in ignore:
         t = re.sub(regexp, '', t, flags=re.IGNORECASE)
+        logging.debug('Title after %s removal: %s', regexp, t)
     t = t.strip()
-    m = re.match('(.*)\s* -\s* (.*)', t)
     logging.info('Title after junk removal: %s', t)
+    m = re.match('(.*)\s* -\s* (.*)', t)
     if m:
         d['artist'] = m.group(1)
         d['album'] = m.group(2)
