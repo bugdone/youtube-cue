@@ -153,7 +153,8 @@ def get_cue(url):
         logging.getLogger().setLevel(logging.DEBUG)
         logging.getLogger().addHandler(fh)
     try:
-        _get_cue(url)
+        return _get_cue(url)
     except:
         logging.exception('get_cue() failed')
-    write_log()
+    finally:
+        write_log()
