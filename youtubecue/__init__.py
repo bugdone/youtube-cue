@@ -3,10 +3,11 @@ import logging
 import os.path
 import pprint
 import re
-import subprocess
 import time
 
 import musicbrainz
+import youtube_dl
+
 import youtube
 from musicbrainz import init_musicbrainz
 
@@ -95,21 +96,33 @@ def add_duration(tracks, duration):
     tracks[-1]['duration'] = duration - tracks[-1]['offset']
 
 
+class MyLogger(object):
+    def debug(self, msg):
+        pass
+
+    def warning(self, msg):
+        logging.warn('youtube-dl warn: %s', msg)
+
+    def error(self, msg):
+        logging.error('youtube-dl error: %s', msg)
+
+
 def youtubedl(url):
     """Retry youtube-dl -j until it returns the description"""
+    ytdl = youtube_dl.YoutubeDL({'logger': MyLogger()})
     for _ in range(3):
-        o = subprocess.check_output(('youtube-dl -j ' + url).split())
-        o = json.loads(o)
+        o = ytdl.extract_info(url, download=False)
         if not o.get('description'):
             logging.warn('youtube-dl returned empty description')
             time.sleep(3)
             continue
         return o
+    return o
 
 
 def _get_cue(url):
     o = youtubedl(url)
-    title = o['fulltitle']
+    title = o['title']
     log_data('youtubedl', o)
     logging.info('Got description\n%s\n', o['description'])
     d = dict(url=o['webpage_url'],
