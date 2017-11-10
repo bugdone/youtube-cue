@@ -9,11 +9,17 @@ import musicbrainz
 import youtube_dl
 
 import youtube
-from musicbrainz import init_musicbrainz
 
 log_directory = None
 logged_data = {}
 logged_messages = []
+use_musicbrainz = False
+
+
+def init_musicbrainz(app, version):
+    global use_musicbrainz
+    use_musicbrainz = True
+    musicbrainz.init_musicbrainz(app, version)
 
 
 def set_log_directory(path):
@@ -148,7 +154,8 @@ def _get_cue(url):
         guess_artist_album(d)
         if d.get('artist'):
             logging.info('Have artist, using musicbrainz to guess track titles')
-            musicbrainz.guess_tracks(d)
+            if use_musicbrainz:
+                musicbrainz.guess_tracks(d)
         add_duration(d['tracks'], d['duration'])
     log_data('output', d)
     return d

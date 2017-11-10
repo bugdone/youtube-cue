@@ -8,8 +8,8 @@ import musicbrainzngs
 import youtubecue
 
 
-def init_musicbrainz(*args, **kwargs):
-    musicbrainzngs.set_useragent(*args, **kwargs)
+def init_musicbrainz(app, version):
+    musicbrainzngs.set_useragent(app, version)
 
 
 def get_tracks(artist, album):
