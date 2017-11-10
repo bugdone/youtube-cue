@@ -1,0 +1,4 @@
+musicbrainzngs
+lxml
+requests
+youtube-dl
