@@ -1,9 +1,9 @@
 from setuptools import setup
 
 setup(name='youtube_cue',
-      version='0.1.0.dev1',
+      version='0.1.0.dev3',
       packages=['youtube_cue'],
-      scripts=['youtube-cue'],
+      entry_points={'console_scripts': ['youtube-cue=youtube_cue:main']},
 
       install_requires=['musicbrainzngs', 'lxml', 'requests', 'youtube-dl', 'cssselect'],
 
