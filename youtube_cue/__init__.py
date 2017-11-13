@@ -1,8 +1,10 @@
+import argparse
 import json
 import logging
 import os.path
 import pprint
 import re
+import os
 import time
 
 import musicbrainz
@@ -178,3 +180,17 @@ def get_cue(url):
         logging.exception('get_cue() failed')
     finally:
         write_log()
+
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('url', help='youtube url')
+    parser.add_argument('--musicbrainz-app', dest='musicbrainz_app')
+    parser.add_argument('--musicbrainz-version', dest='musicbrainz_version')
+    args = parser.parse_args()
+
+    if args.musicbrainz_app and args.musicbrainz_version:
+        init_musicbrainz(args.musicbrainz_app, args.musicbrainz_version)
+    if 'youtubecue_log_dir' in os.environ:
+        set_log_directory(os.environ.get('youtubecue_log_dir'))
+    print json.dumps(get_cue(args.url), indent=4)

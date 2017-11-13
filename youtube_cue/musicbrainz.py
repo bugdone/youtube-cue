@@ -5,7 +5,7 @@ import pprint
 
 import musicbrainzngs
 
-import youtubecue
+import youtube_cue
 
 
 def init_musicbrainz(app, version):
@@ -14,7 +14,7 @@ def init_musicbrainz(app, version):
 
 def get_tracks(artist, album):
     recordings = musicbrainzngs.search_recordings(artist=artist, release=album)['recording-list']
-    youtubecue.log_data('musicbrainz', recordings)
+    youtube_cue.log_data('musicbrainz', recordings)
     return [r['title'] for r in recordings]
 
 
