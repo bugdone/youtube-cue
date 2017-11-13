@@ -8,7 +8,9 @@ setup(name='youtube_cue',
       install_requires=['musicbrainzngs', 'lxml', 'requests', 'youtube-dl', 'cssselect'],
 
       description='youtube-cue',
-      url='http://github.com/bugdone/youtube-cue',
+      url='https://github.com/bugdone/youtube-cue',
+      download_url='https://github.com/bugdone/youtube-cue/archive/0.1.tar.gz',
+      keywords=['youtube', 'cue'],
       author='bugdone',
       author_email='bugdone@gmail.com',
       license='MIT')
