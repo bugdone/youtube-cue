@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import argparse
 import json
 import logging
@@ -87,7 +88,7 @@ def guess_artist_album(d):
         logging.debug('Title after %s removal: %s', regexp, t)
     t = t.strip()
     logging.info('Title after junk removal: %s', t)
-    m = re.match('(.*)\s* -\s* (.*)', t)
+    m = re.match(u'(.*)\s* (?:-|–|—)\s* (.*)', t)
     if m:
         d['artist'] = m.group(1)
         d['album'] = m.group(2)
